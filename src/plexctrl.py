@@ -1,22 +1,34 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 # coding: utf-8
 ###--- Module Imports -----------------------------------------------------------------------------------------------------------
-import	ConfigParser
-from	urlparse			import	urlparse
-from	urlparse			import	urljoin
-#import	codecs
+try:
+	import	configparser
+except:
+	import	ConfigParser		as configparser
+
+try:
+	import	http.cookiejar		as cookielib
+except:
+	import	cookielib
+
+try:
+	from	urllib.parse		import	urlparse		as	urlparse
+	from	urllib.parse		import	urljoin			as	urljoin
+except:
+	from	urlparse			import	urlparse
+	from	urlparse			import	urljoin
+	
+try:
+	from	io					import	StringIO
+except:
+	from	StringIO			import	StringIO
+
 import	os, re, requests, signal, shutil, sys, time, traceback
 import	logging, logging.handlers
-from	plexapi.server		import	PlexServer
+#from	plexapi.server		import	PlexServer
 from	plexapi.myplex		import	MyPlexUser as PlexUser
-import	cookielib
-from	StringIO			import	StringIO
 from	lxml				import	etree	as letree
 from	xml					import	etree	as xetree
-#from	bs4					import	BeautifulSoup	as	bSoup
-#from	collections			import	OrderedDict
-###--- My Modules ---------------------------------------------------------------------------------------------------------------
-#from	libosstd			import	fulldict, VerbDict, DataHandler, DirectoryCheck, DirectorySetup, FileCheck, AppendData, WriteData, FileHead, FileExt
 
 ###--- Function Definitions -----------------------------------------------------------------------------------------------------
 def argparser():
@@ -102,7 +114,7 @@ def ReadConfig():
 		# Set exit status '1' upon failure and exit.
 		sys.exit( 1 )
 
-	config = ConfigParser.ConfigParser()
+	config = configparser.ConfigParser()
 	config.read( cfgFile )
 		
 	if pArgs.verbose > 3:
@@ -295,12 +307,20 @@ def myPlex( servercfg ):
 	logger = logging.getLogger( __name__ )
 	
 	from plexapi.myplex import MyPlexUser
-	user = MyPlexUser( servercfg['username'], servercfg['password'] )
-	plex = user.getServer( servercfg['server']).connect
+	from plexapi.server import PlexServer
 	
-	print( plex.keys() )
-	#for section in plex.library.sections():
-	#	logger.info( "Section: %s" % ( section.title ) )
+	user = MyPlexUser( servercfg['username'], servercfg['password'] )
+	for key in user.keys():
+		logger.debug( "\tKey: %s\tValue: %s" % ( key, user[key] ) )
+		
+	server = user.getServer( servercfg['server']).connect
+	
+	for server in user.servers():
+		logger.info( "Server: %s" % ( server ) )
+		
+	plex = PlexServer( servercfg['host'], servercfg['port'], user['authenticationToken'] )
+	for section in plex.library.sections():
+		logger.info( "Section: %s" % ( section.title ) )
 ###------------------------------------------------------------------------------------------------------------------------------
 def main():
 	global pArgs
@@ -319,8 +339,8 @@ def main():
 		logger.debug( "Username:\t%s" % ( servercfg['username'] ) )
 		logger.debug( "Password:\t%s" % ( servercfg['password'] ) )
 
-	user = PlexUser( servercfg['username'], servercfg['password'] )
-	plex = user.getServer( servercfg['server'] ).connect()
+	#user = PlexUser( servercfg['username'], servercfg['password'] )
+	#plex = user.getServer( servercfg['server'] ).connect()
 
 	rSession = requests.session()
 	

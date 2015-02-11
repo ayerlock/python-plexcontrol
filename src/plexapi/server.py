@@ -15,41 +15,40 @@ from xml.etree import ElementTree
 TOTAL_QUERIES = 0
 
 
-class PlexServer(object):
-    
-    def __init__(self, address='localhost', port=32400, token=None):
-        self.address = self._cleanAddress(address)
+class PlexServer( object ):
+    def __init__( self, address='localhost', port=32400, token=None ):
+        self.address = self._cleanAddress( address )
         self.port = port
         self.token = token
         data = self._connect()
-        self.friendlyName = data.attrib.get('friendlyName')
-        self.machineIdentifier = data.attrib.get('machineIdentifier')
-        self.myPlex = bool(data.attrib.get('myPlex'))
-        self.myPlexMappingState = data.attrib.get('myPlexMappingState')
-        self.myPlexSigninState = data.attrib.get('myPlexSigninState')
-        self.myPlexSubscription = data.attrib.get('myPlexSubscription')
-        self.myPlexUsername = data.attrib.get('myPlexUsername')
-        self.platform = data.attrib.get('platform')
-        self.platformVersion = data.attrib.get('platformVersion')
-        self.transcoderActiveVideoSessions = int(data.attrib.get('transcoderActiveVideoSessions'))
-        self.updatedAt = int(data.attrib.get('updatedAt'))
-        self.version = data.attrib.get('version')
+        self.friendlyName = data.attrib.get( 'friendlyName' )
+        self.machineIdentifier = data.attrib.get( 'machineIdentifier' )
+        self.myPlex = bool(data.attrib.get( 'myPlex' ) )
+        self.myPlexMappingState = data.attrib.get( 'myPlexMappingState' )
+        self.myPlexSigninState = data.attrib.get( 'myPlexSigninState' )
+        self.myPlexSubscription = data.attrib.get( 'myPlexSubscription' )
+        self.myPlexUsername = data.attrib.get( 'myPlexUsername' )
+        self.platform = data.attrib.get( 'platform' )
+        self.platformVersion = data.attrib.get( 'platformVersion' )
+        self.transcoderActiveVideoSessions = int(data.attrib.get( 'transcoderActiveVideoSessions' ) )
+        self.updatedAt = int(data.attrib.get( 'updatedAt' ) )
+        self.version = data.attrib.get( 'version' )
 
-    def __repr__(self):
-        return '<%s:%s:%s>' % (self.__class__.__name__, self.address, self.port)
+    def __repr__( self ):
+        return '<%s:%s:%s>' % ( self.__class__.__name__, self.address, self.port )
 
-    def _cleanAddress(self, address):
-        address = address.lower().strip('/')
-        if address.startswith('http://'):
+    def _cleanAddress( self, address ):
+        address = address.lower().strip( '/' )
+        if address.startswith( 'http://' ):
             address = address[8:]
         return address
 
-    def _connect(self):
+    def _connect( self ):
         try:
-            return self.query('/')
-        except Exception, err:
-            log.error('%s:%s: %s', self.address, self.port, err)
-            raise NotFound('No server found at: %s:%s' % (self.address, self.port))
+            return self.query( '/' )
+        except Exception as err:
+            log.error( '%s:%s: %s', self.address, self.port, err )
+            raise NotFound('No server found at: %s:%s' % ( self.address, self.port ) )
 
     @property
     def library(self):
