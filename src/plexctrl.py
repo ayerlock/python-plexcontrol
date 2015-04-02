@@ -49,10 +49,10 @@ def argparser():
 	gap.add_argument( 		'--user', 			action = 'store', 		dest = "username", 	metavar = "[username]" )
 	gap.add_argument( 		'--pass', 			action = 'store', 		dest = "password", 	metavar = "[password]" )
 	gap= ap.add_argument_group( 'logging' )
-	gap.add_argument( 		'--loglevel', 		action = 'store', 		dest = "loglevel", 	metavar = "[logging level]", 	default = 'info', 	choices= ['crit', 'error', 'warn', 'notice', 'info', 'verbose', 'debug', 'insane'] )
+	gap.add_argument( 		'--loglevel', 		action = 'store', 		dest = "loglevel", 	metavar = "[logging level]", 	default = 'debug', 	choices= ['crit', 'error', 'warn', 'notice', 'info', 'verbose', 'debug', 'insane'] )
 	gap.add_argument( 		'--logfile', 		action = 'store', 		dest = "logfile", 	metavar = "[logfile]" )
 	gap.add_argument(		'--debug', 			action = 'store_true' )
-	gap.add_argument( '-v', '--verbose', 		action = 'count', 		default = 0 )
+	gap.add_argument( '-v', '--verbose', 		action = 'count', 		default = 5 )
 	gap= ap.add_argument_group( 'operations' )
 	gap.add_argument(		'--clients', 		action = 'store_true' )
 	gap.add_argument(		'--recent', 		action = 'store_true' )
@@ -124,7 +124,6 @@ def ReadConfig():
 ###------------------------------------------------------------------------------------------------------------------------------
 def SetServer( pConfig ):
 	logger = logging.getLogger( __name__ )
-	
 	servercfg = dict()
 	
 	# Check if there was a default Plex server set via the command line or configuration file.
@@ -303,22 +302,28 @@ def recentlyAdded( servercfg ):
 	#			vetitle = unicode( element.get( 'title' ) ).encode( 'ascii', 'replace' )
 	#			print("Title: %s\tSeason: %s\tEpisode: %s\tTitle: %s" % ( vptitle, vseason, vepisode, vetitle ) )
 ###------------------------------------------------------------------------------------------------------------------------------
-def myPlex( servercfg ):
+def myPlex( servercfg, pConfig ):
 	logger = logging.getLogger( __name__ )
 	
 	from plexapi.myplex import MyPlexUser
 	from plexapi.server import PlexServer
 	
-	user = MyPlexUser( servercfg['username'], servercfg['password'] )
-	for key in user.keys():
-		logger.debug( "\tKey: %s\tValue: %s" % ( key, user[key] ) )
-		
-	server = user.getServer( servercfg['server']).connect
+	if "global" in pConfig.sections():
+		logger.debug( "Getting MyPlex credentials from configuration file." )
+		myplexuser = pConfig.get( 'global', 'myplexuser' )
+		myplexpass = pConfig.get( 'global', 'myplexpass' )
 	
-	for server in user.servers():
+	#user = MyPlexUser( servercfg['username'], servercfg['password'] )
+	myplex = MyPlexUser( myplexuser, myplexpass )
+	for key in myplex.keys():
+		logger.debug( "\tKey: %s\tValue: %s" % ( key, myplex[key] ) )
+		
+	server = myplex.getServer( servercfg['server']).connect
+	
+	for server in myplex.servers():
 		logger.info( "Server: %s" % ( server ) )
 		
-	plex = PlexServer( servercfg['host'], servercfg['port'], user['authenticationToken'] )
+	plex = PlexServer( servercfg['host'], servercfg['port'], myplex['authenticationToken'] )
 	for section in plex.library.sections():
 		logger.info( "Section: %s" % ( section.title ) )
 ###------------------------------------------------------------------------------------------------------------------------------
@@ -349,7 +354,7 @@ def main():
 	elif pArgs.recent:
 		content = recentlyAdded( servercfg )
 	elif pArgs.myplex:
-		content = myPlex( servercfg )
+		content = myPlex( servercfg, pConfig )
 ###------------------------------------------------------------------------------------------------------------------------------
 if __name__ == '__main__':
 	main()
